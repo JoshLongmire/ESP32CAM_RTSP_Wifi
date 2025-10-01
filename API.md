@@ -1,14 +1,22 @@
-ESP32-CAM HTTP API (Esp32camV7.ino)
+ESP32-CAM HTTP API (Esp32camV8.ino)
 
-This document describes the HTTP API exposed by `Esp32camV7/Esp32camV7.ino` running on an AI‑Thinker ESP32‑CAM.
+This document describes the HTTP API exposed by `Esp32camV8/Esp32camV8.ino` running on an AI‑Thinker ESP32‑CAM.
 
 Base URL examples:
 - `http://<device-ip>` (e.g., `http://192.168.1.50`)
-- `http://<mdns-hostname>.local` (default `http://esp32cam2.local`)
+- `http://<mdns-hostname>.local` (default `http://esp32camgray.local`)
 
 Authentication:
 - Most endpoints are open on the local network.
 - OTA Update at `/update` uses HTTP Basic Auth (`OTA_USER` / `OTA_PASS`).
+
+## Recent Improvements (V8)
+- Enhanced error handling and input validation
+- Improved memory management and streaming performance
+- Better WiFi connection handling with detailed status reporting
+- Enhanced security with input sanitization and bounds checking
+- Added memory monitoring and system diagnostics
+- Fixed critical bugs in streaming and network management
 
 
 Endpoints Overview
@@ -40,22 +48,30 @@ GET `/` (Root)
 GET `/stream`
 - Content-Type: `multipart/x-mixed-replace; boundary=frame`
 - Streams continuous JPEG frames until the client disconnects or an OTA begins.
+- Enhanced error handling and client connection monitoring
 - Notes:
-  - If the camera isn’t initialized, the handler returns `503 Camera not initialized`.
+  - If the camera isn't initialized, the handler returns `503 Camera not initialized`.
   - During streaming, frames are acquired via `esp_camera_fb_get()` and returned immediately.
+  - Improved client disconnection detection and frame buffer cleanup
+  - Better error reporting for incomplete frame transmission
 
 
 GET `/capture`
 - Captures a single JPEG and saves it to the SD card root.
 - Filename format: `/<MM-DD-YYYY>_<HH-MM-SS>.jpg` (local time via NTP if available).
+- Enhanced error handling with detailed write verification
 - Responses:
   - `204 No Content` on success
   - `503 Camera not initialized` if camera failed to init
   - `503 SD not mounted` if SD_MMC is unavailable
+  - `503 Camera capture failed` if frame buffer acquisition fails
+  - `503 Incomplete file write` if SD write is incomplete
+  - `503 File creation failed` if SD file creation fails
 
 
 GET `/setCamera`
 - Applies camera settings and persists them to Preferences under key `camSettings`.
+- Enhanced input validation with automatic bounds checking using `constrain()`
 - After applying, responds with `302` and `Location: /` (browser returns to main page).
 - Query parameters (all optional unless noted):
 
@@ -88,12 +104,17 @@ GET `/setCamera`
 
 POST `/addNetwork`
 - Content-Type: `application/x-www-form-urlencoded`
+- Enhanced input validation and security checks
 - Form fields:
-  - `ssid` (required)
-  - `password` (required)
+  - `ssid` (required, max 32 characters)
+  - `password` (required, max 63 characters)
 - Behavior:
-  - If SSID already exists in storage, request is ignored.
+  - Validates SSID length (1-32 chars) and password length (max 63 chars)
+  - If SSID already exists in storage, request is ignored with warning log.
   - On success, responds with `302` and `Location: /`.
+- Error handling:
+  - Invalid SSID length returns `302` redirect with warning
+  - Password too long returns `302` redirect with warning
 
 
 POST `/deleteNetwork`
@@ -124,10 +145,16 @@ Persistent Storage (Preferences)
 
 
 Fallback AP Mode
+- Enhanced connection logic with better status monitoring and early failure detection
 - If no saved network connects, the device starts a Wi‑Fi AP:
   - SSID: `ESP32-CAM-Fallback`
   - Password: `esp32cam`
   - AP IP is printed to Serial (and shown in the UI header)
+- Connection attempts now include:
+  - Detailed status monitoring during connection attempts
+  - Early failure detection for invalid credentials or unavailable networks
+  - Signal strength reporting on successful connections
+  - Improved timeout handling with proper cleanup
 
 
 LED Status
@@ -139,29 +166,35 @@ Response Codes Summary
 - `200 OK`: Standard success for actions like `/restart`
 - `204 No Content`: Successful capture with no body (`/capture`)
 - `302 Found`: Redirect to `/` after POST/GET actions
-- `503 Service Unavailable`: Camera or SD not initialized when required
+- `503 Service Unavailable`: Various error conditions:
+  - Camera not initialized
+  - Camera sensor not available
+  - SD not mounted
+  - Camera capture failed
+  - Incomplete file write
+  - File creation failed
 
 
 cURL Examples
 
 Stream MJPEG to stdout (Ctrl+C to stop):
 ```bash
-curl -v http://esp32cam2.local/stream | cat
+curl -v http://esp32camgray.local/stream | cat
 ```
 
 Capture a photo:
 ```bash
-curl -X GET http://esp32cam2.local/capture -I
+curl -X GET http://esp32camgray.local/capture -I
 ```
 
 Set camera settings (VGA, quality 10, horizontal mirror):
 ```bash
-curl "http://esp32cam2.local/setCamera?framesize=3&quality=10&hmirror=1"
+curl "http://esp32camgray.local/setCamera?framesize=3&quality=10&hmirror=1"
 ```
 
 Add Wi‑Fi network:
 ```bash
-curl -X POST http://esp32cam2.local/addNetwork \
+curl -X POST http://esp32camgray.local/addNetwork \
   -H "Content-Type: application/x-www-form-urlencoded" \
   --data-urlencode "ssid=MySSID" \
   --data-urlencode "password=MyPassword" -I
@@ -169,17 +202,26 @@ curl -X POST http://esp32cam2.local/addNetwork \
 
 Delete Wi‑Fi network:
 ```bash
-curl -X POST http://esp32cam2.local/deleteNetwork \
+curl -X POST http://esp32camgray.local/deleteNetwork \
   -H "Content-Type: application/x-www-form-urlencoded" \
   --data-urlencode "ssid=MySSID" -I
 ```
 
 Restart device:
 ```bash
-curl -X POST http://esp32cam2.local/restart -i
+curl -X POST http://esp32camgray.local/restart -i
 ```
 
 OTA update (browser):
-- Navigate to `http://esp32cam2.local/update`, log in with `OTA_USER` / `OTA_PASS`, and upload a new firmware binary.
+- Navigate to `http://esp32camgray.local/update`, log in with `OTA_USER` / `OTA_PASS`, and upload a new firmware binary.
+
+## System Diagnostics
+
+The device now includes enhanced logging and monitoring:
+- Memory usage monitoring (heap and PSRAM) every 30 seconds
+- Detailed startup sequence with emoji-prefixed status messages
+- Enhanced WiFi connection status reporting
+- Camera initialization status with PSRAM detection
+- SD card mount status reporting
 
 
