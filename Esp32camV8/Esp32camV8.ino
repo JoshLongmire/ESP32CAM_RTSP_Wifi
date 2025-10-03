@@ -32,7 +32,7 @@
 #endif
 
 #define LED_PIN 4  // on‑board flash LED
-const char* MDNS_HOSTNAME = "esp32camgray"; // mDNS hostname (use lowercase)----------------------------------Change Per Device 
+const char* MDNS_HOSTNAME = "esp32camshit"; // mDNS hostname (use lowercase)----------------------------------Change Per Device 
 const char* OTA_USER = "esp32cam"; // OTA basic auth username----------------------------------Change Per Device 
 const char* OTA_PASS = "1234578"; // OTA basic auth password----------------------------------Change Per Device 
 
@@ -205,6 +205,15 @@ String renderMainPage() {
     await fetch('/capture');
     location.reload();
   }
+  async function resetToDefaults(){
+    if(confirm('Reset camera settings to defaults? This will restore optimal quality settings.')){
+      await fetch('/resetDefaults');
+      // Wait a moment for settings to take effect before reloading
+      setTimeout(() => {
+        location.reload();
+      }, 500);
+    }
+  }
 </script>
 <title>ESP32-CAM</title></head><body>
 <header><h1>ESP32-CAM Server</h1>)rawliteral"
@@ -278,36 +287,39 @@ String renderMainPage() {
   html += "<label><input type=\"checkbox\" name=\"whitebal\" value=\"1\" " + String(curWb?"checked":"") + "> Auto White Balance</label>";
 
   // Additional controls
-  html += "<label>JPEG Quality (lower is better): <output id=\"qOut\">" + String(curQ) + "</output></label>";
+  html += "<br><label>JPEG Quality (lower is better): <output id=\"qOut\">" + String(curQ) + "</output></label>";
   html += "<input type=\"range\" name=\"quality\" min=\"4\" max=\"63\" step=\"1\" value=\"" + String(curQ) + "\" oninput=\"document.getElementById('qOut').textContent=this.value\"/>";
 
-  html += "<label><input type=\"checkbox\" name=\"hmirror\" value=\"1\" " + String(curHM?"checked":"") + "> Mirror (Horizontal)</label>";
-  html += "<label><input type=\"checkbox\" name=\"vflip\" value=\"1\" " + String(curVF?"checked":"") + "> Flip (Vertical)</label>";
+  html += "<br><label><input type=\"checkbox\" name=\"hmirror\" value=\"1\" " + String(curHM?"checked":"") + "> Mirror (Horizontal)</label>";
+  html += "<br><label><input type=\"checkbox\" name=\"vflip\" value=\"1\" " + String(curVF?"checked":"") + "> Flip (Vertical)</label>";
 
-  html += "<label><input type=\"checkbox\" name=\"agc\" value=\"1\" " + String(curAGC?"checked":"") + "> Auto Gain Control</label>";
-  html += "<label>Gain Ceiling<select name=\"gainceiling\">";
+  html += "<br><label><input type=\"checkbox\" name=\"agc\" value=\"1\" " + String(curAGC?"checked":"") + "> Auto Gain Control</label>";
+  html += "<br><label>Gain Ceiling<select name=\"gainceiling\">";
   for (int gc = 0; gc <= 6; gc++) {
     html += String("<option value=\"") + String(gc) + "\"" + (curGC==gc?" selected":"") + ">" + String(gc) + "</option>";
   }
   html += "</select></label>";
 
-  html += "<label><input type=\"checkbox\" name=\"aec2\" value=\"1\" " + String(curAEC2?"checked":"") + "> AEC2</label>";
-  html += "<label>AE Level: <output id=\"aeOut\">" + String(curAELevel) + "</output></label>";
+  html += "<br><label><input type=\"checkbox\" name=\"aec2\" value=\"1\" " + String(curAEC2?"checked":"") + "> AEC2</label>";
+  html += "<br><label>AE Level: <output id=\"aeOut\">" + String(curAELevel) + "</output></label>";
   html += "<input type=\"range\" name=\"ae_level\" min=\"-2\" max=\"2\" step=\"1\" value=\"" + String(curAELevel) + "\" oninput=\"document.getElementById('aeOut').textContent=this.value\"/>";
 
-  html += "<label><input type=\"checkbox\" name=\"awb_gain\" value=\"1\" " + String(curAWBGain?"checked":"") + "> AWB Gain</label>";
+  html += "<br><label><input type=\"checkbox\" name=\"awb_gain\" value=\"1\" " + String(curAWBGain?"checked":"") + "> AWB Gain</label>";
 
-  html += "<label>Special Effect<select name=\"effect\">";
+  html += "<br><label>Special Effect<select name=\"effect\">";
   const char* effectNames[] = {"None","Negative","Grayscale","Red Tint","Green Tint","Blue Tint","Sepia","Film","Warm","Cool"};
   for (int e = 0; e <= 9; e++) {
     html += String("<option value=\"") + String(e) + "\"" + (curEffect==e?" selected":"") + ">" + String(effectNames[e]) + "</option>";
   }
   html += "</select></label>";
 
-  html += "<label>Sharpness: <output id=\"shOut\">" + String(curSharp) + "</output></label>";
+  html += "<br><label>Sharpness: <output id=\"shOut\">" + String(curSharp) + "</output></label>";
   html += "<input type=\"range\" name=\"sharpness\" min=\"-3\" max=\"3\" step=\"1\" value=\"" + String(curSharp) + "\" oninput=\"document.getElementById('shOut').textContent=this.value\"/>";
 
-  html += "<div class=\"buttons\"><button type=\"submit\" class=\"btn\">Apply & Save</button></div>";
+  html += "<div class=\"buttons\">";
+  html += "<button type=\"submit\" class=\"btn\">Apply & Save</button>";
+  html += "<button type=\"button\" class=\"btn\" onclick=\"resetToDefaults()\" style=\"background:#cc6600;margin-left:0.5rem\">Reset to Defaults</button>";
+  html += "</div>";
   html += "</form>";
 
   html += R"rawliteral(
@@ -531,6 +543,50 @@ void handleDeleteNetwork() {
   server.sendHeader("Location","/"); server.send(302, "text/plain", "");
 }
 
+void handleResetDefaults() {
+  sensor_t *s = esp_camera_sensor_get();
+  if (!s) {
+    server.send(503, "text/plain", "Camera sensor not available");
+    return;
+  }
+  
+  Serial.println("🔄 Resetting camera settings to defaults...");
+  
+  // Set default values based on PSRAM availability (same as initCamera)
+  int defaultQuality = psramFound() ? 10 : 12;  // Lower is better quality
+  
+  // Apply default settings
+  Serial.println("📸 Applying default camera settings...");
+  s->set_framesize(s, FRAMESIZE_VGA);           // VGA (3)
+  delay(50); // Allow camera to process setting
+  s->set_brightness(s, 0);                      // Neutral
+  s->set_contrast(s, 0);                        // Neutral  
+  s->set_saturation(s, 0);                      // Neutral
+  s->set_whitebal(s, 1);                        // Auto white balance ON
+  s->set_quality(s, defaultQuality);            // Optimal quality for memory
+  delay(50); // Allow camera to process quality setting
+  s->set_hmirror(s, 0);                         // No mirror
+  s->set_vflip(s, 0);                           // No flip
+  s->set_gain_ctrl(s, 1);                       // Auto gain control ON
+  s->set_gainceiling(s, GAINCEILING_2X);        // 2X gain ceiling
+  s->set_aec2(s, 0);                            // AEC2 OFF
+  s->set_ae_level(s, 0);                        // AE level neutral
+  s->set_awb_gain(s, 1);                        // AWB gain ON
+  s->set_special_effect(s, 0);                  // No effect
+  s->set_sharpness(s, 0);                       // Neutral sharpness
+  delay(100); // Allow all settings to take effect
+  
+  // Save default settings to preferences
+  preferences.putString("camSettings",
+    "3,0,0,0,1," + String(defaultQuality) + ",0,0,1,0,0,0,1,0,0"
+  );
+  
+  Serial.printf("✅ Camera settings reset to defaults (Quality: %d)\n", defaultQuality);
+  Serial.println("📸 Settings applied: VGA, Brightness=0, Contrast=0, Saturation=0, Quality=" + String(defaultQuality));
+  server.sendHeader("Location","/"); 
+  server.send(302, "text/plain", "");
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.println("🚀 ESP32-CAM Starting up...");
@@ -614,6 +670,7 @@ void setup() {
   server.on("/stream",        HTTP_GET,  handleJPGStream);
   server.on("/capture",       HTTP_GET,  handleCapture);
   server.on("/setCamera",     HTTP_GET,  handleSetCamera);
+  server.on("/resetDefaults", HTTP_GET,  handleResetDefaults);
   server.on("/addNetwork",    HTTP_POST, handleAddNetwork);
   server.on("/deleteNetwork", HTTP_POST, handleDeleteNetwork);
   server.on("/restart",       HTTP_POST, handleRestart);

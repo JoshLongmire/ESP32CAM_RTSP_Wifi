@@ -4,7 +4,7 @@ This document describes the HTTP API exposed by `Esp32camV8/Esp32camV8.ino` runn
 
 Base URL examples:
 - `http://<device-ip>` (e.g., `http://192.168.1.50`)
-- `http://<mdns-hostname>.local` (default `http://esp32camgray.local`)
+- `http://<mdns-hostname>.local` (default `http://esp32camshit.local`)
 
 Authentication:
 - Most endpoints are open on the local network.
@@ -27,6 +27,7 @@ Endpoints Overview
 | GET    | `/stream`     | MJPEG stream (multipart/x-mixed-replace)  | Continuous JPEG frames until client disconnects |
 | GET    | `/capture`    | Capture photo and save to SD              | 204 No Content on success; 503 if camera/SD not ready |
 | GET    | `/setCamera`  | Apply camera settings (query parameters)  | Persists to Preferences and redirects to `/` |
+| GET    | `/resetDefaults` | Reset camera settings to optimal defaults | Applies and saves default settings, redirects to `/` |
 | POST   | `/addNetwork` | Add a Wi‑Fi network (form POST)           | Redirects to `/` |
 | POST   | `/deleteNetwork` | Delete a saved network                 | Redirects to `/` |
 | POST   | `/restart`    | Restart the device                        | Responds 200 then reboots shortly after |
@@ -100,6 +101,30 @@ GET `/setCamera`
 
   Effects
   - `effect`: `0..9` where `0=None`, `1=Negative`, `2=Grayscale`, `3=Red Tint`, `4=Green Tint`, `5=Blue Tint`, `6=Sepia`, `7=Film`, `8=Warm`, `9=Cool`.
+
+
+GET `/resetDefaults`
+- Resets all camera settings to optimal default values based on hardware configuration.
+- No query parameters required.
+- Behavior:
+  - Applies optimal default settings to camera sensor
+  - Settings are chosen based on PSRAM availability for best performance
+  - Saves default settings to preferences for persistence
+  - Includes proper delays between setting applications to ensure they take effect
+- Default Settings Applied:
+  - Frame Size: VGA (640x480) - good balance of quality and performance
+  - JPEG Quality: 10 (with PSRAM) or 12 (without PSRAM) - optimal for available memory
+  - Image Settings: All neutral (brightness: 0, contrast: 0, saturation: 0, sharpness: 0)
+  - Auto Controls: Auto white balance, auto gain control, and AWB gain enabled
+  - Gain Ceiling: 2X (optimal for most lighting conditions)
+  - Effects: None (no special effects)
+  - Mirror/Flip: Both disabled
+- Responses:
+  - `302 Found` redirects to `/` after successful reset
+  - `503 Camera sensor not available` if camera failed to initialize
+- Serial Output:
+  - Shows detailed logging of settings being applied
+  - Confirms reset completion with applied settings summary
 
 
 POST `/addNetwork`
@@ -179,22 +204,27 @@ cURL Examples
 
 Stream MJPEG to stdout (Ctrl+C to stop):
 ```bash
-curl -v http://esp32camgray.local/stream | cat
+curl -v http://esp32camshit.local/stream | cat
 ```
 
 Capture a photo:
 ```bash
-curl -X GET http://esp32camgray.local/capture -I
+curl -X GET http://esp32camshit.local/capture -I
 ```
 
 Set camera settings (VGA, quality 10, horizontal mirror):
 ```bash
-curl "http://esp32camgray.local/setCamera?framesize=3&quality=10&hmirror=1"
+curl "http://esp32camshit.local/setCamera?framesize=3&quality=10&hmirror=1"
+```
+
+Reset camera settings to optimal defaults:
+```bash
+curl -X GET http://esp32camshit.local/resetDefaults -I
 ```
 
 Add Wi‑Fi network:
 ```bash
-curl -X POST http://esp32camgray.local/addNetwork \
+curl -X POST http://esp32camshit.local/addNetwork \
   -H "Content-Type: application/x-www-form-urlencoded" \
   --data-urlencode "ssid=MySSID" \
   --data-urlencode "password=MyPassword" -I
@@ -202,18 +232,18 @@ curl -X POST http://esp32camgray.local/addNetwork \
 
 Delete Wi‑Fi network:
 ```bash
-curl -X POST http://esp32camgray.local/deleteNetwork \
+curl -X POST http://esp32camshit.local/deleteNetwork \
   -H "Content-Type: application/x-www-form-urlencoded" \
   --data-urlencode "ssid=MySSID" -I
 ```
 
 Restart device:
 ```bash
-curl -X POST http://esp32camgray.local/restart -i
+curl -X POST http://esp32camshit.local/restart -i
 ```
 
 OTA update (browser):
-- Navigate to `http://esp32camgray.local/update`, log in with `OTA_USER` / `OTA_PASS`, and upload a new firmware binary.
+- Navigate to `http://esp32camshit.local/update`, log in with `OTA_USER` / `OTA_PASS`, and upload a new firmware binary.
 
 ## System Diagnostics
 

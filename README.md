@@ -7,9 +7,10 @@ Features
 - Live MJPEG stream at `/stream` with enhanced error handling
 - Photo capture to SD (`/capture`), timestamped filenames with write verification
 - Camera settings UI (framesize, brightness, contrast, saturation, white balance, quality, mirror/flip, AGC/AEC2, AE level, AWB gain, effects, sharpness)
+- **Reset to Defaults** button for optimal camera settings based on hardware configuration
 - Saved Wi‑Fi networks (add/delete), auto‑connect on boot with AP fallback
 - OTA update portal at `/update` (HTTP Basic Auth)
-- mDNS discovery (`http://esp32camgray.local` by default)
+- mDNS discovery (`http://esp32camshit.local` by default)
 - Enhanced status logging over Serial with emoji prefixes
 - Memory monitoring and system diagnostics
 - Input validation and security enhancements
@@ -48,9 +49,10 @@ Quick Start
 
 
 Using the Web Interface
-- Open `http://<device-ip>/` or `http://<hostname>.local/` (default `http://esp32camgray.local/`).
+- Open `http://<device-ip>/` or `http://<hostname>.local/` (default `http://esp32camshit.local/`).
 - Live stream appears under "Live Stream" with enhanced error handling.
 - Adjust camera settings and click "Apply & Save" (persists to Preferences with input validation).
+- **Reset to Defaults** button restores optimal camera settings based on your hardware configuration.
 - "Capture & Save" takes a photo (requires SD card) and saves it to `/` on the SD card with write verification.
 - Manage Wi‑Fi networks in "Saved Networks" and "Add Network" with enhanced validation.
 - Use "OTA Update" to access the update portal; use your configured credentials.
@@ -76,7 +78,7 @@ Wi‑Fi Behavior
 
 mDNS
 - If mDNS starts successfully, the device registers HTTP service on port 80.
-- Access via `http://<MDNS_HOSTNAME>.local/` (defaults to `esp32camgray`).
+- Access via `http://<MDNS_HOSTNAME>.local/` (defaults to `esp32camshit`).
 
 
 OTA Updates
@@ -178,6 +180,33 @@ Security Notes
 - **WiFi status reporting** with signal strength and connection quality
 - **Camera diagnostics** with PSRAM detection and initialization status
 - **SD card monitoring** with mount status and operation verification
+
+## Reset to Defaults Feature
+
+The new "Reset to Defaults" button provides an easy way to restore optimal camera settings:
+
+### How to Use
+1. Open the web interface and navigate to the "Camera Settings" section
+2. Click the "Reset to Defaults" button (orange button next to "Apply & Save")
+3. Confirm the reset in the dialog box
+4. The page will reload with optimal settings applied
+
+### What Gets Reset
+- **Frame Size**: VGA (640x480) - optimal balance of quality and performance
+- **JPEG Quality**: Automatically selected based on your ESP32-CAM's memory:
+  - Quality 10 (high quality) if PSRAM is detected
+  - Quality 12 (good quality) if no PSRAM available
+- **Image Settings**: All reset to neutral values (brightness: 0, contrast: 0, saturation: 0, sharpness: 0)
+- **Auto Controls**: Auto white balance, auto gain control, and AWB gain enabled
+- **Gain Ceiling**: 2X (optimal for most lighting conditions)
+- **Effects**: None (clean, natural image)
+- **Mirror/Flip**: Both disabled
+
+### Benefits
+- **One-click optimization**: No need to manually adjust multiple settings
+- **Hardware-aware**: Automatically selects best quality for your specific ESP32-CAM
+- **Improved streaming**: Better performance and image quality
+- **Troubleshooting**: Quick way to reset if camera settings get misconfigured
 
 License
 - Provided as‑is for personal/educational use. Adapt as needed for your project.
