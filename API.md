@@ -18,6 +18,20 @@ Authentication:
 - Added memory monitoring and system diagnostics
 - Fixed critical bugs in streaming and network management
 
+## ⚠️ Important: Arduino IDE OTA Settings
+
+**Critical Configuration Required for OTA Updates:**
+
+Before using OTA updates, you MUST configure these settings in Arduino IDE:
+
+- **Tools → Partition Scheme**: `Default 4MB with spiffs (1.2MB APP/1.5MB SPIFFS)`
+- **Tools → Flash Size**: `4MB (32Mb)`
+- **Tools → PSRAM**: `Enabled` (if your board supports it)
+- **Tools → Arduino Runs On**: `Core 1`
+- **Tools → Events Run On**: `Core 1`
+
+**Without these settings, OTA updates will fail or cause boot loops!**
+
 
 Endpoints Overview
 

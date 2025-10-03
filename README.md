@@ -19,6 +19,7 @@ This project provides a robust and enhanced web interface for the AI‑Thinker E
   - [Libraries](#2-libraries)
   - [Configure](#3-configure)
   - [Build & Flash](#4-build--flash)
+  - [Configure OTA Settings](#5-configure-ota-settings-important)
 - [Using the Web Interface](#-using-the-web-interface)
 - [Wi‑Fi Behavior](#-wi‑fi-behavior)
 - [mDNS](#-mdns)
@@ -80,6 +81,20 @@ This project provides a robust and enhanced web interface for the AI‑Thinker E
 - Board: `AI Thinker ESP32‑CAM`
 - Port: your device's COM port
 - Flash sketch normally. First boot will attempt Wi‑Fi connections from saved list (empty on first run).
+
+### 5. Configure OTA Settings (Important!)
+To enable OTA updates, you must configure the following settings in Arduino IDE:
+
+![OTA Settings](OTASettings.png)
+
+**Required Arduino IDE Settings:**
+- **Tools → Partition Scheme**: `Default 4MB with spiffs (1.2MB APP/1.5MB SPIFFS)`
+- **Tools → Flash Size**: `4MB (32Mb)`
+- **Tools → PSRAM**: `Enabled` (if your board supports it)
+- **Tools → Arduino Runs On**: `Core 1`
+- **Tools → Events Run On**: `Core 1`
+
+⚠️ **Critical**: Without these settings, OTA updates will fail or cause boot loops!
 
 
 ## 🌐 Using the Web Interface
@@ -173,6 +188,13 @@ This project provides a robust and enhanced web interface for the AI‑Thinker E
   - Monitor memory usage through Serial logs (reported every 30 seconds).
   - PSRAM detection status is reported at startup.
   - Consider reducing frame size or quality if memory is constrained.
+
+- **OTA update failures**:
+  - Ensure Arduino IDE settings are configured correctly (see [Configure OTA Settings](#5-configure-ota-settings-important))
+  - Check that partition scheme is set to `Default 4MB with spiffs`
+  - Verify flash size is set to `4MB (32Mb)`
+  - Ensure both cores are set to `Core 1`
+  - Check Serial logs for OTA error messages
 
 ## 🔒 Security Notes
 - Change `OTA_USER` and `OTA_PASS` before deploying (defaults are insecure!).
