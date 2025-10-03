@@ -1,9 +1,44 @@
-ESP32-CAM Web Stream + Wi‑Fi Manager + OTA (Esp32camV8)
+# ESP32-CAM Web Stream + Wi‑Fi Manager + OTA (Esp32camV8)
+
+[![Platform](https://img.shields.io/badge/platform-ESP32-blue.svg)](https://www.espressif.com/en/products/socs/esp32)
+[![Hardware](https://img.shields.io/badge/hardware-AI--Thinker%20ESP32--CAM-green.svg)](https://github.com/espressif/arduino-esp32)
+[![Camera](https://img.shields.io/badge/camera-OV2640-orange.svg)](https://github.com/espressif/esp32-camera)
+[![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-8.0-brightgreen.svg)](CHANGELOG.md)
+[![Arduino](https://img.shields.io/badge/Arduino-Compatible-red.svg)](https://www.arduino.cc/)
 
 This project provides a robust and enhanced web interface for the AI‑Thinker ESP32‑CAM with live MJPEG streaming, camera controls, Wi‑Fi network management, SD capture, and OTA firmware updates. Version 8 includes significant improvements in reliability, security, and performance.
 
+## 📋 Table of Contents
 
-Features
+- [Features](#-features)
+- [Hardware](#-hardware)
+- [Project Structure](#-project-structure)
+- [Quick Start](#-quick-start)
+  - [Install ESP32 Support](#1-install-esp32-support)
+  - [Libraries](#2-libraries)
+  - [Configure](#3-configure)
+  - [Build & Flash](#4-build--flash)
+- [Using the Web Interface](#-using-the-web-interface)
+- [Wi‑Fi Behavior](#-wi‑fi-behavior)
+- [mDNS](#-mdns)
+- [OTA Updates](#-ota-updates)
+- [API Reference](#-api-reference)
+- [Serial Logs](#-serial-logs)
+- [Reset to Defaults Feature](#-reset-to-defaults-feature)
+  - [How to Use](#how-to-use)
+  - [What Gets Reset](#what-gets-reset)
+  - [Benefits](#benefits)
+- [Troubleshooting](#-troubleshooting)
+- [Security Notes](#-security-notes)
+- [Version 8 Improvements](#-version-8-improvements)
+  - [Critical Bug Fixes](#critical-bug-fixes)
+  - [Performance Enhancements](#performance-enhancements)
+  - [Security Improvements](#security-improvements)
+  - [System Diagnostics](#system-diagnostics)
+- [License](#-license)
+
+## 🚀 Features
 - Live MJPEG stream at `/stream` with enhanced error handling
 - Photo capture to SD (`/capture`), timestamped filenames with write verification
 - Camera settings UI (framesize, brightness, contrast, saturation, white balance, quality, mirror/flip, AGC/AEC2, AE level, AWB gain, effects, sharpness)
@@ -16,39 +51,38 @@ Features
 - Input validation and security enhancements
 - Improved WiFi connection handling with detailed status reporting
 
-
-Hardware
+## 🔧 Hardware
 - Module: AI‑Thinker ESP32‑CAM (OV2640)
 - Flash LED: GPIO 4
 - SD Card: `SD_MMC` interface
 - Board selection in Arduino IDE: `AI Thinker ESP32‑CAM`
 
 
-Project Structure
+## 📁 Project Structure
 - `Esp32camV8/Esp32camV8.ino` — main sketch (enhanced version)
 - `API.md` — HTTP API reference with V8 improvements
+- `CHANGELOG.md` — Version history and updates
 
+## ⚡ Quick Start
+### 1. Install ESP32 Support
+- Arduino IDE: Boards Manager → install "ESP32 by Espressif Systems".
 
-Quick Start
-1) Install ESP32 support
-- Arduino IDE: Boards Manager → install “ESP32 by Espressif Systems”.
-
-2) Libraries
+### 2. Libraries
 - `ElegantOTA` (install via Library Manager) — used for OTA portal.
 - All other includes are provided by the ESP32 core (`esp_camera`, `WiFi`, `WebServer`, `Preferences`, `SD_MMC`, `ESPmDNS`).
 
-3) Configure
+### 3. Configure
 - Open `Esp32camV8/Esp32camV8.ino` and update:
-  - `MDNS_HOSTNAME` — device hostname (lowercase, default: "esp32camgray")
+  - `MDNS_HOSTNAME` — device hostname (lowercase, default: "esp32camshit")
   - `OTA_USER` and `OTA_PASS` — credentials for OTA portal (change from defaults!)
 
-4) Build & Flash
+### 4. Build & Flash
 - Board: `AI Thinker ESP32‑CAM`
-- Port: your device’s COM port
+- Port: your device's COM port
 - Flash sketch normally. First boot will attempt Wi‑Fi connections from saved list (empty on first run).
 
 
-Using the Web Interface
+## 🌐 Using the Web Interface
 - Open `http://<device-ip>/` or `http://<hostname>.local/` (default `http://esp32camshit.local/`).
 - Live stream appears under "Live Stream" with enhanced error handling.
 - Adjust camera settings and click "Apply & Save" (persists to Preferences with input validation).
@@ -58,8 +92,7 @@ Using the Web Interface
 - Use "OTA Update" to access the update portal; use your configured credentials.
 - Monitor system status through enhanced Serial logging with emoji prefixes.
 
-
-Wi‑Fi Behavior
+## 📶 Wi‑Fi Behavior
 - Enhanced connection logic with detailed status monitoring and early failure detection
 - On boot, the device iterates saved networks and tries to connect (10‑second timeout per network).
 - On successful connect:
@@ -76,22 +109,19 @@ Wi‑Fi Behavior
   - LED stays ON while in AP mode.
 
 
-mDNS
+## 🔍 mDNS
 - If mDNS starts successfully, the device registers HTTP service on port 80.
 - Access via `http://<MDNS_HOSTNAME>.local/` (defaults to `esp32camshit`).
 
-
-OTA Updates
+## 🔄 OTA Updates
 - Visit `http://<device>/update`.
 - Authenticate with `OTA_USER` / `OTA_PASS` (configured in the sketch).
 - Upload the compiled binary; upon success, the device will reboot automatically.
 
-
-API Reference
+## 📚 API Reference
 - See `API.md` for full details and cURL examples for all endpoints.
 
-
-Serial Logs
+## 📊 Serial Logs
 - Enhanced logging system with detailed status reporting and system diagnostics:
   - 🔄 ongoing actions (e.g., OTA progress, connect attempts)
   - ✅ successes
@@ -111,41 +141,40 @@ Serial Logs
   - SD card mount status reporting
 
 
-Troubleshooting
-- Camera init failed (`❌ Camera init failed`):
+## 🔧 Troubleshooting
+- **Camera init failed** (`❌ Camera init failed`):
   - Power the module with a stable 5V/≥1A supply.
   - Ensure the camera ribbon cable is fully seated.
   - Reduce framesize/quality if memory constrained; confirm PSRAM is available.
   - Check Serial logs for specific error codes and PSRAM detection status.
 
-- SD_MMC mount failed (`⚠️ SD_MMC Mount Failed`):
+- **SD_MMC mount failed** (`⚠️ SD_MMC Mount Failed`):
   - Use a formatted microSD (FAT/FAT32), insert firmly before boot.
   - Try a different card; some cards are unreliable on ESP32‑CAM.
   - Enhanced error reporting now shows specific failure reasons.
 
-- No Wi‑Fi connection:
+- **No Wi‑Fi connection**:
   - Add a network via the web UI (AP mode SSID `ESP32-CAM-Fallback`, pass `esp32cam`).
   - Verify credentials and signal strength; relocate closer to the router.
   - Enhanced connection logs now show detailed status and failure reasons.
 
-- Stream stutters or disconnections:
+- **Stream stutters or disconnections**:
   - Improved client disconnection detection and frame buffer management.
   - Lower framesize or increase JPEG quality value (worse compression) to reduce CPU.
   - Close extra browser tabs/clients; multiple viewers increase load.
   - Check Serial logs for streaming error messages.
 
-- Capture doesn't save:
+- **Capture doesn't save**:
   - Requires SD card mounted. Enhanced error reporting shows specific failure reasons.
   - Check Serial logs for detailed write verification results.
   - New validation ensures complete file writes before reporting success.
 
-- Memory issues:
+- **Memory issues**:
   - Monitor memory usage through Serial logs (reported every 30 seconds).
   - PSRAM detection status is reported at startup.
   - Consider reducing frame size or quality if memory is constrained.
 
-
-Security Notes
+## 🔒 Security Notes
 - Change `OTA_USER` and `OTA_PASS` before deploying (defaults are insecure!).
 - Enhanced input validation and bounds checking on all API endpoints.
 - WiFi credential validation with length limits (SSID: 32 chars max, Password: 63 chars max).
